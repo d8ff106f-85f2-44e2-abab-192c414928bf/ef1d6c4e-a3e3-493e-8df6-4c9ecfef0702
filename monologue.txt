@@ -1,0 +1,69 @@
+received email, reading
+
+-- signed 2026-02-06T00:06:55Z
+
+
+summary: have big mesh, make cross section.
+
+critical question: can I assume mesh to have tetrahedral cells?
+
+worst case is loose triangle soup
+
+can't open google drive link
+
+-- signed 2026-02-06T00:13:23Z
+
+
+mesh format:
+- ~300MB file text file, sections delineated by $<section name> and $End<section name>, has MeshFormat, Entities, Nodes, and Elements
+- list entities, each line starts with index number followed by arbitrary arr of values
+- list nodes, index number // [n]vec3 // four int attrs?
+  - last entry of nodes (797606) all [n]vec3
+- list elements, one line of four int attrs then [m][n]int
+
+-- signed 2026-02-06T00:32:18Z
+
+
+KEY IDEA: only dragging the plane needs to be fast.
+This means that I can do all the sorting after entering the plane angle
+freezing during this precomputation is not mentioned in the reqs
+
+-- signed 2026-02-06T00:49:13Z
+
+
+5M elements, 
+if all tetrahedra (coordination number 4),
+worst case 20M vec3s, 
+best case 5M * 4 / 4 = 5M vec3s
+
+if I load them all into GPU memory and do an indirect draw call,
+how much gpu mem does it use? 
+
+elements: 5M * [4]u32 index = 80MB
+points: 5M * [3]f32 * 4 / 4  = 60MB
+
+140 MB, doable even on laptops
+
+-- signed 2026-02-06T01:13:12Z
+
+
+game plan:
+- precompute rotated coords and sort by Z' axis
+- precompute 1D AABB of all tets, referencing index of sorted coord 
+- sort a min list and max list, ref sorted index
+- on drag:
+  - sweep through sorted coord list, find critical index
+  - sweep through min list until value of index is at thresh
+  - sweep through max list until value of index is at thresh
+  - choose the shorter of the min/max list, worst case is 50% culled
+  - allocate, loop through the chosen list and push intersecting tets, worst case is all are intersectiong
+  - worst case: 2.5M u32 comparisons, say it's 10 cycles then at 1GHz it's 40fps -- might need further binning
+  - now we get a list of triangles cut by the plane.
+
+
+Deliverable Intermediates
+step 1: (native) impl just culling, profile wall time, print to file
+step 2: (native) add line list, profile wall time, print to file
+step 3: rendering stuff
+
+-- signed 2026-02-06T02:42:50Z
