@@ -1,10 +1,6 @@
 const std = @import("std");
 
 const LENGTH = 1024 * 1024 * 5;
-var ns: [LENGTH]u32 = undefined;
-var xs: [LENGTH]f32 = undefined;
-var ys: [LENGTH]f32 = undefined;
-var zs: [LENGTH]f32 = undefined;
 
 fn rand(u: *u32, v: *u32) u32 {
     v.* = 36969 * (v.* & 65535) + (v.* >> 16);
@@ -13,7 +9,16 @@ fn rand(u: *u32, v: *u32) u32 {
 
 }
 
-pub fn main() void {
+pub fn main() !void {
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    var ns = try allocator.alloc(u32, LENGTH);
+    var xs = try allocator.alloc(f32, LENGTH);
+    var ys = try allocator.alloc(f32, LENGTH);
+    var zs = try allocator.alloc(f32, LENGTH);
+
     // pre-populate randomish z
     // alg from https://stackoverflow.com/a/215818
     var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
@@ -23,23 +28,25 @@ pub fn main() void {
         xs[i] = @floatFromInt(rand(&u, &v));
         ys[i] = @floatFromInt(rand(&u, &v));
         zs[i] = @floatFromInt(rand(&u, &v));
+        xs[i] /= 65536;
+        ys[i] /= 65536;
+        zs[i] /= 65536;
     }
 
     for (0..10) |i| {
         std.debug.print("{any},{any},{any},{any}\n", .{ ns[i], xs[i], ys[i], zs[i] });
     }
 
-
-    const M: [9]f32 = .{
-        1, 2, 3,
-        4, 5, 6,
-        7, 8, 9,
-    };
+    var M: [9]f32 = undefined;
+    for (&M) |*m| {
+        m.* = @floatFromInt(rand(&u, &v));
+        m.* /= 65536 * 65536;
+    }
 
     const t0 = std.time.milliTimestamp();
-    rotate_inplace(M, &xs, &ys, &zs);
+    rotate_inplace(M, xs, ys, zs);
     const t1 = std.time.milliTimestamp();
-    sort_inplace(&ns, &xs, &ys, &zs);
+    sort_inplace(ns, xs, ys, zs);
     const t2 = std.time.milliTimestamp();
     const dt1: f32 = @floatFromInt(t1 - t0);
     const dt2: f32 = @floatFromInt(t2 - t1);
@@ -52,9 +59,8 @@ pub fn main() void {
     }
 }
 
-
-fn rotate_inplace(M: [9]f32, X: []f32, Y: []f32, Z: []f32) void {
-    for (X, Y, Z) |*x, *y, *z| {
+fn rotate_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
+    for (xs, ys, zs) |*x, *y, *z| {
         const x0, const y0, const z0 = .{x.*, y.*, z.*};
         x.* = M[0]*x0 + M[1]*y0 + M[2]*z0;
         y.* = M[3]*x0 + M[4]*y0 + M[5]*z0;
@@ -62,7 +68,7 @@ fn rotate_inplace(M: [9]f32, X: []f32, Y: []f32, Z: []f32) void {
     }
 }
 
-fn sort_inplace(N: []u32, X: []f32, Y: []f32, Z: []f32) void {
+fn sort_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
     const SortQuery = struct {
         ns: []u32,
         xs: []f32,
@@ -80,11 +86,12 @@ fn sort_inplace(N: []u32, X: []f32, Y: []f32, Z: []f32) void {
             std.mem.swap(f32, &ctx.zs[a], &ctx.zs[b]);
         }
     };
+
     const query: SortQuery = .{
-        .ns = N,
-        .xs = X,
-        .ys = Y,
-        .zs = Z,
+        .ns = ns,
+        .xs = xs,
+        .ys = ys,
+        .zs = zs,
     };
 
     std.sort.heapContext(0, LENGTH, query);
