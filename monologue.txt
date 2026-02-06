@@ -67,3 +67,10 @@ step 2: (native) add line list, profile wall time, print to file
 step 3: rendering stuff
 
 -- signed 2026-02-06T02:42:50Z
+
+
+Bedtime. Coded a little bit after dinner for rough estimate of sorting 5M f32s and swap.
+
+Unoptimized around 5 sec, optimized around 2 sec.
+
+-- signed 2026-02-06T07:30:00Z
