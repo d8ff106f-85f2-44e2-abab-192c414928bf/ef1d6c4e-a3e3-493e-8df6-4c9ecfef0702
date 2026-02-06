@@ -74,3 +74,12 @@ Bedtime. Coded a little bit after dinner for rough estimate of sorting 5M f32s a
 Unoptimized around 5 sec, optimized around 2 sec.
 
 -- signed 2026-02-06T07:30:00Z
+
+Memory swap might be the bottleneck compared to coord transform.
+Need to benchmark sort vs transform on SoA vs AoS
+
+also consider if matmul-then-insert is faster
+
+...Ok matmul 5M elems is negligible
+
+-- signed 2026-02-06T23:00:07Z
