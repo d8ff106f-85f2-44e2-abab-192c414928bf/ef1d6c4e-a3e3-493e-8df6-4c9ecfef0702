@@ -62,7 +62,7 @@ pub fn main() !void {
         std.debug.print("{any},{any},{any},{any}\n", .{ ns[i], xs[i], ys[i], zs[i] });
     }
 
-    generate_dummy_mesh(4);
+    generate_dummy_mesh(20);
 }
 
 fn rotate_vertex_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
@@ -104,49 +104,43 @@ fn sort_vertex_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
 }
 
 fn generate_dummy_mesh(comptime len: u32) void {
-    var vert: [len * len * len][3]f32 = undefined;
+    var xs: [len * len * len]f32 = undefined;
+    var ys: [len * len * len]f32 = undefined;
+    var zs: [len * len * len]f32 = undefined;
     var tets: [len * len * len * 5][4]u32 = undefined;
     for (0..len) |x| {
         for (0..len) |y| {
             for (0..len) |z| {
-                const xu32: u32 = @truncate(x);
-                const yu32: u32 = @truncate(y);
-                const zu32: u32 = @truncate(z);
-                const xi  = xu32 * len * len;
-                const yi  = yu32 * len;
-                const zi  = zu32;
-                const xii = (xu32+1) * len * len;
-                const yii = (yu32+1) * len;
-                const zii = (zu32+1);
-                const v0 = xi  + yi  + zi;
-                const v1 = xii + yi  + zi;
-                const v2 = xi  + yii + zi;
-                const v3 = xii + yii + zi;
-                const v4 = xi  + yi  + zii;
-                const v5 = xii + yi  + zii;
-                const v6 = xi  + yii + zii;
-                const v7 = xii + yii + zii;
-                tets[xi..][yi*5..][zi*5..][0] = .{ v0, v3, v5, v6 };
-                tets[xi..][yi*5..][zi*5..][1] = .{ v1, v3, v5, v0 };
-                tets[xi..][yi*5..][zi*5..][2] = .{ v2, v3, v0, v6 };
-                tets[xi..][yi*5..][zi*5..][3] = .{ v4, v0, v5, v6 };
-                tets[xi..][yi*5..][zi*5..][4] = .{ v7, v3, v5, v6 };
-                vert[xi..][yi..][zi][0] = @floatFromInt(xu32);
-                vert[xi..][yi..][zi][1] = @floatFromInt(yu32);
-                vert[xi..][yi..][zi][2] = @floatFromInt(zu32);
-                vert[xi..][yi..][zi][0] /= 10;
-                vert[xi..][yi..][zi][1] /= 10;
-                vert[xi..][yi..][zi][2] /= 10;
+                const x_u32: u32 = @truncate(x);
+                const y_u32: u32 = @truncate(y);
+                const z_u32: u32 = @truncate(z);
+                const x0 = x_u32 * len * len;
+                const y0 = y_u32 * len;
+                const z0 = z_u32;
+                const x1 = (x_u32+1) * len * len;
+                const y1 = (y_u32+1) * len;
+                const z1 = (z_u32+1);
+                const v0 = x0 + y0 + z0;
+                const v1 = x1 + y0 + z0;
+                const v2 = x0 + y1 + z0;
+                const v3 = x1 + y1 + z0;
+                const v4 = x0 + y0 + z1;
+                const v5 = x1 + y0 + z1;
+                const v6 = x0 + y1 + z1;
+                const v7 = x1 + y1 + z1;
+                tets[x0..][y0*5..][z0*5..][0] = .{ v0, v3, v5, v6 };
+                tets[x0..][y0*5..][z0*5..][1] = .{ v1, v3, v5, v0 };
+                tets[x0..][y0*5..][z0*5..][2] = .{ v2, v3, v0, v6 };
+                tets[x0..][y0*5..][z0*5..][3] = .{ v4, v0, v5, v6 };
+                tets[x0..][y0*5..][z0*5..][4] = .{ v7, v3, v5, v6 };
+                xs[x0..][y0..][z0] = @floatFromInt(x_u32);
+                ys[x0..][y0..][z0] = @floatFromInt(y_u32);
+                zs[x0..][y0..][z0] = @floatFromInt(z_u32);
+                xs[x0..][y0..][z0] /= @floatFromInt(len);
+                ys[x0..][y0..][z0] /= @floatFromInt(len);
+                zs[x0..][y0..][z0] /= @floatFromInt(len);
             }
         }
-    }
-
-    for (vert[0..10]) |v| {
-        std.debug.print("{any}\n", .{v});
-    }
-
-    for (tets[0..10]) |t| {
-        std.debug.print("{any} {any} {any} {any}\n", .{ vert[t[0]], vert[t[1]], vert[t[2]], vert[t[3]] });
     }
 
 }
