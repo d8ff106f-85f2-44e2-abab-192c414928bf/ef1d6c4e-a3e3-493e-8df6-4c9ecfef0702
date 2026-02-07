@@ -44,9 +44,9 @@ pub fn main() !void {
     }
 
     const t0 = std.time.milliTimestamp();
-    rotate_inplace(M, xs, ys, zs);
+    rotate_vertex_inplace(M, xs, ys, zs);
     const t1 = std.time.milliTimestamp();
-    sort_inplace(ns, xs, ys, zs);
+    sort_vertex_inplace(ns, xs, ys, zs);
     const t2 = std.time.milliTimestamp();
     const dt1: f32 = @floatFromInt(t1 - t0);
     const dt2: f32 = @floatFromInt(t2 - t1);
@@ -59,7 +59,7 @@ pub fn main() !void {
     }
 }
 
-fn rotate_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
+fn rotate_vertex_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
     for (xs, ys, zs) |*x, *y, *z| {
         const x0, const y0, const z0 = .{x.*, y.*, z.*};
         x.* = M[0]*x0 + M[1]*y0 + M[2]*z0;
@@ -68,7 +68,7 @@ fn rotate_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
     }
 }
 
-fn sort_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
+fn sort_vertex_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
     const SortQuery = struct {
         ns: []u32,
         xs: []f32,
