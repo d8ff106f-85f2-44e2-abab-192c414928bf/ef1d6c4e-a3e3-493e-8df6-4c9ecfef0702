@@ -116,5 +116,23 @@ Loop thorugh 5M tets:
       - SIMD: build triangle soup, insert only if indices cross the critical index
 
 -- signed 2026-02-07T00:56:06Z
-   
-   
+
+|            |            |            |                  |                 |          |          |          |
+|            |            |            |                  |                 |          |          |          |
+| original x | original y | original z | rank of original | index of sorted | x sorted | y sorted | z sorted |
+|            |            |            |                  |                 |          |          |          |
+|            |            |            |                  |                 |          |          |          |
+
+
+|             |                    |           |                    |           |                    |
+|             |                    |           |                    |           |                    |
+| v0 v1 v2 v3 |                    | tet index | rank of max vertex | tet index | rank of min vertex |
+|             |                    |           |                    |           |                    |
+|             |                    |           |                    |           |                    |
+
+
+checkpoint, close to early bedtime
+
+pay attent to fencepost error for tets generation
+
+-- signed 2026-02-07T05:20:25Z

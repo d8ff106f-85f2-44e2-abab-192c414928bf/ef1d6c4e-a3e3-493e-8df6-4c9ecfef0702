@@ -1,43 +1,29 @@
 const std = @import("std");
 
-const LENGTH = 1024 * 1024 * 5;
-
-fn rand(u: *u32, v: *u32) u32 {
-    v.* = 36969 * (v.* & 65535) + (v.* >> 16);
-    u.* = 18000 * (u.* & 65535) + (u.* >> 16);
-    return (v.* << 16) + (u.* & 65535);
-}
-
-fn init_random_points(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
-    // alg from https://stackoverflow.com/a/215818
-    var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
-    var v: u32 = u % 65536 ;
-    for (0..LENGTH) |i| {
-        ns[i] = @truncate(i);
-        xs[i] = @floatFromInt(rand(&u, &v));
-        ys[i] = @floatFromInt(rand(&u, &v));
-        zs[i] = @floatFromInt(rand(&u, &v));
-        xs[i] /= 65536;
-        ys[i] /= 65536;
-        zs[i] /= 65536;
-    }
-}
+const SIDE_LENGTH = 100;
+const VERT_LENGTH = SIDE_LENGTH * SIDE_LENGTH * SIDE_LENGTH;
+const TETS_LENGTH = SIDE_LENGTH * SIDE_LENGTH * SIDE_LENGTH * 5;
+const TETS_COUNT = (SIDE_LENGTH-1) * (SIDE_LENGTH-1) * (SIDE_LENGTH-1) * 5;
 
 pub fn main() !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const ns = try allocator.alloc(u32, LENGTH);
-    const xs = try allocator.alloc(f32, LENGTH);
-    const ys = try allocator.alloc(f32, LENGTH);
-    const zs = try allocator.alloc(f32, LENGTH);
+    const xs_orig = try allocator.alloc(f32, VERT_LENGTH);
+    const ys_orig = try allocator.alloc(f32, VERT_LENGTH);
+    const zs_orig = try allocator.alloc(f32, VERT_LENGTH);
+    
+    const rs_orig = try allocator.alloc(u32, VERT_LENGTH);
 
-    init_random_points(ns, xs, ys, zs);
+    const ns = try allocator.alloc(u32, VERT_LENGTH);
 
-    for (0..10) |i| {
-        std.debug.print("{any},{any},{any},{any}\n", .{ ns[i], xs[i], ys[i], zs[i] });
-    }
+    const xs = try allocator.alloc(f32, VERT_LENGTH);
+    const ys = try allocator.alloc(f32, VERT_LENGTH);
+    const zs = try allocator.alloc(f32, VERT_LENGTH);
+
+    const ws = try allocator.alloc([4]u32, TETS_LENGTH);
+    const ts = try allocator.alloc([4]u32, TETS_LENGTH);
 
     var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
     var v: u32 = u % 65536 ;
@@ -47,22 +33,48 @@ pub fn main() !void {
         m.* /= 65536 * 65536;
     }
 
-    const t0 = std.time.milliTimestamp();
-    rotate_vertex_inplace(M, xs, ys, zs);
+    // init_random_points(ns, xs, ys, zs);
+    generate_dummy_mesh(SIDE_LENGTH, ns, xs, ys, zs, ws);
+    // rotate_vertex_inplace(M, xs, ys, zs);
+    @memcpy(xs_orig, xs);
+    @memcpy(ys_orig, ys);
+    @memcpy(zs_orig, zs);
+
     const t1 = std.time.milliTimestamp();
+    
     sort_vertex_inplace(ns, xs, ys, zs);
+
     const t2 = std.time.milliTimestamp();
-    const dt1: f32 = @floatFromInt(t1 - t0);
-    const dt2: f32 = @floatFromInt(t2 - t1);
+    const dt: f32 = @floatFromInt(t2 - t1);
 
-    std.debug.print("matmul in {d} sec:\n", .{dt1 / 1000});
-    std.debug.print("sorted in {d} sec:\n", .{dt2 / 1000});
+    std.debug.print("sorted in {d} sec:\n", .{dt / 1000});
 
-    for (0..10) |i| {
-        std.debug.print("{any},{any},{any},{any}\n", .{ ns[i], xs[i], ys[i], zs[i] });
+    for (ns, 0..) |index, rank| {
+        rs_orig[index] = @truncate(rank);
     }
 
-    generate_dummy_mesh(20);
+    for (95..105) |i| {
+        std.debug.print("{any} {any} {any} {any}\n", .{ rs_orig[i] , xs_orig[i] , ys_orig[i] , zs_orig[i] });
+    }
+
+
+
+    for (ws[0..TETS_COUNT], ts[0..TETS_COUNT], 0..) |tet_vert, *tet_meta, tet_index| {
+        const r0 = rs_orig[tet_vert[0]];
+        const r1 = rs_orig[tet_vert[1]];
+        const r2 = rs_orig[tet_vert[2]];
+        const r3 = rs_orig[tet_vert[3]];
+        tet_meta[0] = @truncate(tet_index);
+        tet_meta[1] = @truncate(tet_index);
+        tet_meta[2] = @min(r0, r1, r2, r3);
+        tet_meta[3] = @max(r0, r1, r2, r3);
+    }
+
+    for (0..10) |i| {
+        std.debug.print("{any} {any} {any}\n", .{ ts[i][0], ts[i][2], ts[i][3] });
+    }
+
+
 }
 
 fn rotate_vertex_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
@@ -100,14 +112,22 @@ fn sort_vertex_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
         .zs = zs,
     };
 
-    std.sort.heapContext(0, LENGTH, query);
+    std.sort.heapContext(0, VERT_LENGTH, query);
 }
 
-fn generate_dummy_mesh(comptime len: u32) void {
-    var xs: [len * len * len]f32 = undefined;
-    var ys: [len * len * len]f32 = undefined;
-    var zs: [len * len * len]f32 = undefined;
-    var tets: [len * len * len * 5][4]u32 = undefined;
+fn generate_dummy_mesh(
+    comptime len: u32, 
+    ns: []u32,
+    xs: []f32, 
+    ys: []f32, 
+    zs: []f32, 
+    ws: [][4]u32,
+) void {
+    std.debug.assert(ns.len == len * len * len);
+    std.debug.assert(xs.len == len * len * len);
+    std.debug.assert(ys.len == len * len * len);
+    std.debug.assert(zs.len == len * len * len);
+    std.debug.assert(ws.len == len * len * len * 5);
     for (0..len) |x| {
         for (0..len) |y| {
             for (0..len) |z| {
@@ -128,19 +148,40 @@ fn generate_dummy_mesh(comptime len: u32) void {
                 const v5 = x1 + y0 + z1;
                 const v6 = x0 + y1 + z1;
                 const v7 = x1 + y1 + z1;
-                tets[x0..][y0*5..][z0*5..][0] = .{ v0, v3, v5, v6 };
-                tets[x0..][y0*5..][z0*5..][1] = .{ v1, v3, v5, v0 };
-                tets[x0..][y0*5..][z0*5..][2] = .{ v2, v3, v0, v6 };
-                tets[x0..][y0*5..][z0*5..][3] = .{ v4, v0, v5, v6 };
-                tets[x0..][y0*5..][z0*5..][4] = .{ v7, v3, v5, v6 };
+                ws[x0*5..][y0*5..][z0*5..][0] = .{ v0, v3, v5, v6 };
+                ws[x0*5..][y0*5..][z0*5..][1] = .{ v1, v3, v5, v0 };
+                ws[x0*5..][y0*5..][z0*5..][2] = .{ v2, v3, v0, v6 };
+                ws[x0*5..][y0*5..][z0*5..][3] = .{ v4, v0, v5, v6 };
+                ws[x0*5..][y0*5..][z0*5..][4] = .{ v7, v3, v5, v6 };
                 xs[x0..][y0..][z0] = @floatFromInt(x_u32);
                 ys[x0..][y0..][z0] = @floatFromInt(y_u32);
                 zs[x0..][y0..][z0] = @floatFromInt(z_u32);
                 xs[x0..][y0..][z0] /= @floatFromInt(len);
                 ys[x0..][y0..][z0] /= @floatFromInt(len);
                 zs[x0..][y0..][z0] /= @floatFromInt(len);
+                ns[x0..][y0..][z0] = x0 + y0 + z0;
             }
         }
     }
+}
 
+fn rand(u: *u32, v: *u32) u32 {
+    // alg from https://stackoverflow.com/a/215818
+    v.* = 36969 * (v.* & 65535) + (v.* >> 16);
+    u.* = 18000 * (u.* & 65535) + (u.* >> 16);
+    return (v.* << 16) + (u.* & 65535);
+}
+
+fn init_random_points(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
+    var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
+    var v: u32 = u % 65536 ;
+    for (ns, xs, ys, zs, 0..) |*n, *x, *y, *z, i| {
+        n.* = @truncate(i);
+        x.* = @floatFromInt(rand(&u, &v));
+        y.* = @floatFromInt(rand(&u, &v));
+        z.* = @floatFromInt(rand(&u, &v));
+        x.* /= 65536;
+        y.* /= 65536;
+        z.* /= 65536;
+    }
 }
