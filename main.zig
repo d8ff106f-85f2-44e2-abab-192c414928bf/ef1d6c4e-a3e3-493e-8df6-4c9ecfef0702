@@ -57,6 +57,8 @@ pub fn main() !void {
     for (0..10) |i| {
         std.debug.print("{any},{any},{any},{any}\n", .{ ns[i], xs[i], ys[i], zs[i] });
     }
+
+    generate_dummy_mesh(4);
 }
 
 fn rotate_vertex_inplace(M: [9]f32, xs: []f32, ys: []f32, zs: []f32) void {
@@ -95,4 +97,52 @@ fn sort_vertex_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
     };
 
     std.sort.heapContext(0, LENGTH, query);
+}
+
+fn generate_dummy_mesh(comptime len: u32) void {
+    var vert: [len * len * len][3]f32 = undefined;
+    var tets: [len * len * len * 5][4]u32 = undefined;
+    for (0..len) |x| {
+        for (0..len) |y| {
+            for (0..len) |z| {
+                const xu32: u32 = @truncate(x);
+                const yu32: u32 = @truncate(y);
+                const zu32: u32 = @truncate(z);
+                const xi  = xu32 * len * len;
+                const yi  = yu32 * len;
+                const zi  = zu32;
+                const xii = (xu32+1) * len * len;
+                const yii = (yu32+1) * len;
+                const zii = (zu32+1);
+                const v0 = xi  + yi  + zi;
+                const v1 = xii + yi  + zi;
+                const v2 = xi  + yii + zi;
+                const v3 = xii + yii + zi;
+                const v4 = xi  + yi  + zii;
+                const v5 = xii + yi  + zii;
+                const v6 = xi  + yii + zii;
+                const v7 = xii + yii + zii;
+                tets[xi..][yi*5..][zi*5..][0] = .{ v0, v3, v5, v6 };
+                tets[xi..][yi*5..][zi*5..][1] = .{ v1, v3, v5, v0 };
+                tets[xi..][yi*5..][zi*5..][2] = .{ v2, v3, v0, v6 };
+                tets[xi..][yi*5..][zi*5..][3] = .{ v4, v0, v5, v6 };
+                tets[xi..][yi*5..][zi*5..][4] = .{ v7, v3, v5, v6 };
+                vert[xi..][yi..][zi][0] = @floatFromInt(xu32);
+                vert[xi..][yi..][zi][1] = @floatFromInt(yu32);
+                vert[xi..][yi..][zi][2] = @floatFromInt(zu32);
+                vert[xi..][yi..][zi][0] /= 10;
+                vert[xi..][yi..][zi][1] /= 10;
+                vert[xi..][yi..][zi][2] /= 10;
+            }
+        }
+    }
+
+    for (vert[0..10]) |v| {
+        std.debug.print("{any}\n", .{v});
+    }
+
+    for (tets[0..10]) |t| {
+        std.debug.print("{any} {any} {any} {any}\n", .{ vert[t[0]], vert[t[1]], vert[t[2]], vert[t[3]] });
+    }
+
 }
