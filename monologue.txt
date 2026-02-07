@@ -83,3 +83,38 @@ also consider if matmul-then-insert is faster
 ...Ok matmul 5M elems is negligible
 
 -- signed 2026-02-06T23:00:07Z
+
+
+Checkpoint: raw matmul and sorting is acceptable. Leave it at naive impl and focus on culling now.
+
+I have sorted list of points.
+
+Assume list of tets.
+
+keep arrs parallel so it's easy to memcpy whe building lists for in-place sort
+
+Loop thorugh 5M tets:
+  - given four vertices, record the indicies of the one with min and max Z
+  - build unsorted aabb list (include the tet index for easy memcpy next)
+    | tet | min | max |
+    |-----|-----|-----|
+    |  0  | 253 | 728 |
+    |  1  | 129 | 417 |
+    |  2  | 653 | 123 |
+  - build sorted min list and max list
+    | min | tet |     | max | tet |
+    |-----|-----|     |-----|-----|
+    | 102 | 233 |     | 301 | 623 |
+    | 103 | 629 |     | 301 | 125 |
+    | 103 | 192 |     | 302 | 920 |
+    | 104 | 456 |     | 303 | 128 |
+  - on sweep time:
+    - binary search through sorted points list to find critical index
+    - binary search where to cut the min and max list respectively
+    - iterate over the shorter of the min/max list
+      - naive: immediately start cuting the triangles, at most three faces cut
+      - SIMD: build triangle soup, insert only if indices cross the critical index
+
+-- signed 2026-02-07T00:56:06Z
+   
+   
