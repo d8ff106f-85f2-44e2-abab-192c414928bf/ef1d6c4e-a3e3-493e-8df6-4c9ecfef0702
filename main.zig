@@ -1,9 +1,9 @@
 const std = @import("std");
 
 const SIDE_LENGTH = 100;
-const VERT_LENGTH = SIDE_LENGTH * SIDE_LENGTH * SIDE_LENGTH;
+const NODE_LENGTH = SIDE_LENGTH + 1;
+const VERT_LENGTH = NODE_LENGTH * NODE_LENGTH * NODE_LENGTH;
 const TETS_LENGTH = SIDE_LENGTH * SIDE_LENGTH * SIDE_LENGTH * 5;
-const TETS_COUNT = (SIDE_LENGTH-1) * (SIDE_LENGTH-1) * (SIDE_LENGTH-1) * 5;
 
 pub fn main() !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
@@ -22,11 +22,9 @@ pub fn main() !void {
     const ys = try allocator.alloc(f32, VERT_LENGTH);
     const zs = try allocator.alloc(f32, VERT_LENGTH);
 
-    const tets_buffer = try allocator.alloc([4]u32, TETS_LENGTH);
-
-    const tets = tets_buffer[0..TETS_COUNT];
-    const mins = try allocator.alloc([2]u32, TETS_COUNT);
-    const maxs = try allocator.alloc([2]u32, TETS_COUNT);
+    const tets = try allocator.alloc([4]u32, TETS_LENGTH);
+    const mins = try allocator.alloc([2]u32, TETS_LENGTH);
+    const maxs = try allocator.alloc([2]u32, TETS_LENGTH);
 
     // var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
     // var v: u32 = u % 65536 ;
@@ -37,7 +35,7 @@ pub fn main() !void {
     // }
 
     // init_random_points(ns, xs, ys, zs);
-    generate_dummy_mesh(SIDE_LENGTH, ns, xs, ys, zs, tets_buffer);
+    generate_dummy_mesh(SIDE_LENGTH, ns, xs, ys, zs, tets);
     // rotate_vertex_inplace(M, xs, ys, zs);
     @memcpy(xs_orig, xs);
     @memcpy(ys_orig, ys);
@@ -80,7 +78,7 @@ pub fn main() !void {
     std.debug.print("precomputed in {d} sec.\n", .{dt / 1000});
 
 
-    const test_slice_z: f32 = 0.5;
+    const test_slice_z: f32 = 0.021;
     const critical_rank = rank: {
         for (zs, 0..) |z, i| {
             if (z >= test_slice_z) {
@@ -103,7 +101,7 @@ pub fn main() !void {
 
     const after_z_no_touch = count: {
         for (mins, 0..) |meta, i| {
-            if (meta[1] > critical_rank) {
+            if (meta[1] >= critical_rank) {
                 break :count i;
             }
         }
@@ -179,29 +177,47 @@ fn sort_tets_inplace(index_and_rank: [][2]u32) void {
 }
 
 fn generate_dummy_mesh(
-    comptime len: u32, 
+    len: u32, 
     ns: []u32,
     xs: []f32, 
     ys: []f32, 
     zs: []f32, 
     ws: [][4]u32,
 ) void {
-    std.debug.assert(ns.len == len * len * len);
-    std.debug.assert(xs.len == len * len * len);
-    std.debug.assert(ys.len == len * len * len);
-    std.debug.assert(zs.len == len * len * len);
+    const nodes = len + 1;
+    std.debug.assert(ns.len == nodes * nodes * nodes);
+    std.debug.assert(xs.len == nodes * nodes * nodes);
+    std.debug.assert(ys.len == nodes * nodes * nodes);
+    std.debug.assert(zs.len == nodes * nodes * nodes);
     std.debug.assert(ws.len == len * len * len * 5);
+    for (0..nodes) |x| {
+        for (0..nodes) |y| {
+            for (0..nodes) |z| {
+                const n = x * nodes * nodes + y * nodes + z;
+                ns[n] = @truncate(n);
+                xs[n] = @floatFromInt(x);
+                ys[n] = @floatFromInt(y);
+                zs[n] = @floatFromInt(z);
+                xs[n] /= @floatFromInt(len);
+                ys[n] /= @floatFromInt(len);
+                zs[n] /= @floatFromInt(len);
+            }
+        }
+    }
     for (0..len) |x| {
         for (0..len) |y| {
             for (0..len) |z| {
+                const i = x * 5 * len * len;
+                const j = y * 5 * len;
+                const k = z * 5;
                 const x_u32: u32 = @truncate(x);
                 const y_u32: u32 = @truncate(y);
                 const z_u32: u32 = @truncate(z);
-                const x0 = x_u32 * len * len;
-                const y0 = y_u32 * len;
+                const x0 = x_u32 * nodes * nodes;
+                const y0 = y_u32 * nodes;
                 const z0 = z_u32;
-                const x1 = (x_u32+1) * len * len;
-                const y1 = (y_u32+1) * len;
+                const x1 = (x_u32+1) * nodes * nodes;
+                const y1 = (y_u32+1) * nodes;
                 const z1 = (z_u32+1);
                 const v0 = x0 + y0 + z0;
                 const v1 = x1 + y0 + z0;
@@ -211,18 +227,11 @@ fn generate_dummy_mesh(
                 const v5 = x1 + y0 + z1;
                 const v6 = x0 + y1 + z1;
                 const v7 = x1 + y1 + z1;
-                ws[x0*5..][y0*5..][z0*5..][0] = .{ v0, v3, v5, v6 }; // center tet
-                ws[x0*5..][y0*5..][z0*5..][1] = .{ v1, v3, v5, v0 };
-                ws[x0*5..][y0*5..][z0*5..][2] = .{ v2, v3, v0, v6 };
-                ws[x0*5..][y0*5..][z0*5..][3] = .{ v4, v0, v5, v6 };
-                ws[x0*5..][y0*5..][z0*5..][4] = .{ v7, v3, v5, v6 };
-                xs[x0..][y0..][z0] = @floatFromInt(x_u32);
-                ys[x0..][y0..][z0] = @floatFromInt(y_u32);
-                zs[x0..][y0..][z0] = @floatFromInt(z_u32);
-                xs[x0..][y0..][z0] /= @floatFromInt(len);
-                ys[x0..][y0..][z0] /= @floatFromInt(len);
-                zs[x0..][y0..][z0] /= @floatFromInt(len);
-                ns[x0..][y0..][z0] = x0 + y0 + z0;
+                ws[i..][j..][k..][0] = .{ v0, v3, v5, v6 }; // center tet
+                ws[i..][j..][k..][1] = .{ v1, v3, v5, v0 };
+                ws[i..][j..][k..][2] = .{ v2, v3, v0, v6 };
+                ws[i..][j..][k..][3] = .{ v4, v0, v5, v6 };
+                ws[i..][j..][k..][4] = .{ v7, v3, v5, v6 };
             }
         }
     }
