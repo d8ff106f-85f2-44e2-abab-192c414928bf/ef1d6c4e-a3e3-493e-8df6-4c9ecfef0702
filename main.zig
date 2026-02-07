@@ -43,24 +43,16 @@ pub fn main() !void {
     @memcpy(ys_orig, ys);
     @memcpy(zs_orig, zs);
 
+
+    std.debug.print("begin precompute...\n", .{});
     const t1 = std.time.milliTimestamp();
     
     sort_vertex_inplace(ns, xs, ys, zs);
 
-    const t2 = std.time.milliTimestamp();
-    const dt: f32 = @floatFromInt(t2 - t1);
-
-    std.debug.print("sorted in {d} sec:\n", .{dt / 1000});
 
     for (ns, 0..) |index, rank| {
         rs_orig[index] = @truncate(rank);
     }
-
-    for (95..105) |i| {
-        std.debug.print("{any} {any} {any} {any}\n", .{ rs_orig[i] , xs_orig[i] , ys_orig[i] , zs_orig[i] });
-    }
-
-
 
     for (tets, mins, maxs, 0..) |tet, *min, *max, i| {
         const r0 = rs_orig[tet[0]];
@@ -73,16 +65,58 @@ pub fn main() !void {
         max[1] = @max(r0, r1, r2, r3);
     }
 
-    for (0..10) |i| {
-        std.debug.print("{any} {any} {any}\n", .{ mins[i][0], mins[i][1], maxs[i][1] });
-    }
-
     sort_tets_inplace(mins);
     sort_tets_inplace(maxs);
 
+    
+    const t2 = std.time.milliTimestamp();
+    const dt: f32 = @floatFromInt(t2 - t1);
+
+    
     for (0..10) |i| {
         std.debug.print("{any} {any} {any} {any}\n", .{ mins[i][0], mins[i][1], maxs[i][0], maxs[i][1] });
     }
+    
+    std.debug.print("precomputed in {d} sec.\n", .{dt / 1000});
+
+
+    const test_slice_z: f32 = 0.5;
+    const critical_rank = rank: {
+        for (zs, 0..) |z, i| {
+            if (z >= test_slice_z) {
+                break :rank i;
+            }
+        }
+        break :rank zs.len;
+    };
+
+    const before_z_no_touch = count: {
+        for (maxs, 0..) |meta, i| {
+            if (meta[1] >= critical_rank) {
+                break :count i;
+            }
+        }
+        break :count maxs.len;
+    };
+
+    const maxs_fail = maxs[0..before_z_no_touch];
+
+    const after_z_no_touch = count: {
+        for (mins, 0..) |meta, i| {
+            if (meta[1] > critical_rank) {
+                break :count i;
+            }
+        }
+        break :count mins.len;
+    };
+
+    const mins_fail = mins[after_z_no_touch..];
+
+    std.debug.print("critical rank: {any}\n", .{critical_rank});
+    std.debug.print("{any} tets total\n", .{tets.len});
+    std.debug.print("{any} tets culled by max\n", .{maxs_fail.len});
+    std.debug.print("{any} tets culled by min\n", .{mins_fail.len});
+    std.debug.print("{any} tets remains\n", .{tets.len - maxs_fail.len - mins_fail.len});
 
 }
 
@@ -177,7 +211,7 @@ fn generate_dummy_mesh(
                 const v5 = x1 + y0 + z1;
                 const v6 = x0 + y1 + z1;
                 const v7 = x1 + y1 + z1;
-                ws[x0*5..][y0*5..][z0*5..][0] = .{ v0, v3, v5, v6 };
+                ws[x0*5..][y0*5..][z0*5..][0] = .{ v0, v3, v5, v6 }; // center tet
                 ws[x0*5..][y0*5..][z0*5..][1] = .{ v1, v3, v5, v0 };
                 ws[x0*5..][y0*5..][z0*5..][2] = .{ v2, v3, v0, v6 };
                 ws[x0*5..][y0*5..][z0*5..][3] = .{ v4, v0, v5, v6 };
