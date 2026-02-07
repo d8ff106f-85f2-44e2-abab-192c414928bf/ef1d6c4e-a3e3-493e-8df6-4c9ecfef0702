@@ -22,19 +22,22 @@ pub fn main() !void {
     const ys = try allocator.alloc(f32, VERT_LENGTH);
     const zs = try allocator.alloc(f32, VERT_LENGTH);
 
-    const ws = try allocator.alloc([4]u32, TETS_LENGTH);
-    const ts = try allocator.alloc([4]u32, TETS_LENGTH);
+    const tets_buffer = try allocator.alloc([4]u32, TETS_LENGTH);
 
-    var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
-    var v: u32 = u % 65536 ;
-    var M: [9]f32 = undefined;
-    for (&M) |*m| {
-        m.* = @floatFromInt(rand(&u, &v));
-        m.* /= 65536 * 65536;
-    }
+    const tets = tets_buffer[0..TETS_COUNT];
+    const mins = try allocator.alloc([2]u32, TETS_COUNT);
+    const maxs = try allocator.alloc([2]u32, TETS_COUNT);
+
+    // var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
+    // var v: u32 = u % 65536 ;
+    // var M: [9]f32 = undefined;
+    // for (&M) |*m| {
+    //     m.* = @floatFromInt(rand(&u, &v));
+    //     m.* /= 65536 * 65536;
+    // }
 
     // init_random_points(ns, xs, ys, zs);
-    generate_dummy_mesh(SIDE_LENGTH, ns, xs, ys, zs, ws);
+    generate_dummy_mesh(SIDE_LENGTH, ns, xs, ys, zs, tets_buffer);
     // rotate_vertex_inplace(M, xs, ys, zs);
     @memcpy(xs_orig, xs);
     @memcpy(ys_orig, ys);
@@ -59,21 +62,27 @@ pub fn main() !void {
 
 
 
-    for (ws[0..TETS_COUNT], ts[0..TETS_COUNT], 0..) |tet_vert, *tet_meta, tet_index| {
-        const r0 = rs_orig[tet_vert[0]];
-        const r1 = rs_orig[tet_vert[1]];
-        const r2 = rs_orig[tet_vert[2]];
-        const r3 = rs_orig[tet_vert[3]];
-        tet_meta[0] = @truncate(tet_index);
-        tet_meta[1] = @truncate(tet_index);
-        tet_meta[2] = @min(r0, r1, r2, r3);
-        tet_meta[3] = @max(r0, r1, r2, r3);
+    for (tets, mins, maxs, 0..) |tet, *min, *max, i| {
+        const r0 = rs_orig[tet[0]];
+        const r1 = rs_orig[tet[1]];
+        const r2 = rs_orig[tet[2]];
+        const r3 = rs_orig[tet[3]];
+        min[0] = @truncate(i);
+        max[0] = @truncate(i);
+        min[1] = @min(r0, r1, r2, r3);
+        max[1] = @max(r0, r1, r2, r3);
     }
 
     for (0..10) |i| {
-        std.debug.print("{any} {any} {any}\n", .{ ts[i][0], ts[i][2], ts[i][3] });
+        std.debug.print("{any} {any} {any}\n", .{ mins[i][0], mins[i][1], maxs[i][1] });
     }
 
+    sort_tets_inplace(mins);
+    sort_tets_inplace(maxs);
+
+    for (0..10) |i| {
+        std.debug.print("{any} {any} {any} {any}\n", .{ mins[i][0], mins[i][1], maxs[i][0], maxs[i][1] });
+    }
 
 }
 
@@ -113,6 +122,26 @@ fn sort_vertex_inplace(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
     };
 
     std.sort.heapContext(0, VERT_LENGTH, query);
+}
+
+fn sort_tets_inplace(index_and_rank: [][2]u32) void {
+    const SortQuery = struct {
+        table: [][2]u32,
+
+        pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+            return ctx.table[a][1] < ctx.table[b][1];
+        }
+
+        pub fn swap(ctx: @This(), a: usize, b: usize) void {
+            std.mem.swap([2]u32, &ctx.table[a], &ctx.table[b]);
+        }
+    };
+
+    const query: SortQuery = .{
+        .table = index_and_rank,
+    };
+
+    std.sort.heapContext(0, index_and_rank.len, query);
 }
 
 fn generate_dummy_mesh(
