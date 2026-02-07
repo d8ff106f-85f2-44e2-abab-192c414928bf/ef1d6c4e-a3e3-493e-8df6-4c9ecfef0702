@@ -6,20 +6,9 @@ fn rand(u: *u32, v: *u32) u32 {
     v.* = 36969 * (v.* & 65535) + (v.* >> 16);
     u.* = 18000 * (u.* & 65535) + (u.* >> 16);
     return (v.* << 16) + (u.* & 65535);
-
 }
 
-pub fn main() !void {
-    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var ns = try allocator.alloc(u32, LENGTH);
-    var xs = try allocator.alloc(f32, LENGTH);
-    var ys = try allocator.alloc(f32, LENGTH);
-    var zs = try allocator.alloc(f32, LENGTH);
-
-    // pre-populate randomish z
+fn init_random_points(ns: []u32, xs: []f32, ys: []f32, zs: []f32) void {
     // alg from https://stackoverflow.com/a/215818
     var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
     var v: u32 = u % 65536 ;
@@ -32,11 +21,26 @@ pub fn main() !void {
         ys[i] /= 65536;
         zs[i] /= 65536;
     }
+}
+
+pub fn main() !void {
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const ns = try allocator.alloc(u32, LENGTH);
+    const xs = try allocator.alloc(f32, LENGTH);
+    const ys = try allocator.alloc(f32, LENGTH);
+    const zs = try allocator.alloc(f32, LENGTH);
+
+    init_random_points(ns, xs, ys, zs);
 
     for (0..10) |i| {
         std.debug.print("{any},{any},{any},{any}\n", .{ ns[i], xs[i], ys[i], zs[i] });
     }
 
+    var u: u32 = @truncate(@as(u64, @bitCast(std.time.milliTimestamp())));
+    var v: u32 = u % 65536 ;
     var M: [9]f32 = undefined;
     for (&M) |*m| {
         m.* = @floatFromInt(rand(&u, &v));
