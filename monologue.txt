@@ -136,3 +136,49 @@ checkpoint, close to early bedtime
 pay attent to fencepost error for tets generation
 
 -- signed 2026-02-07T05:20:25Z
+
+
+woke 1pm
+
+use normal colors in frag shader, calc in vert shader
+
+first test wireframe perf with SDL_Render
+
+start thinking about parser
+
+still need to actually generate triangle list, should use GL map
+
+need to keep copy of unrotated coords
+
+-- signed 2026-02-07T23:20:21Z
+
+
+triangle list and lookup logic working. 
+
+now need to calc the cuts
+
+-- signed 2026-02-08T00:51:06Z
+
+
+vertex table
+||       |       |       ||       |       |       |          ||         |        |        |        ||
+||       |       |       ||       |       |       |          ||         |        |        |        ||
+|| src x | src y | src z || rot x | rot y | rot z | rot rank || sort id | sort x | sort y | sort z ||
+||       |       |       ||       |       |       |          ||         |        |        |        ||
+||       |       |       ||       |       |       |          ||         |        |        |        ||
+
+tets table
+||             |     |     ||             |          ||             |          ||
+||             |     |     ||             |          ||             |          ||
+|| v0 v1 v2 v3 | min | max || min_sort id | min_sort || max_sort id | max_sort ||
+||             |     |     ||             |          ||             |          ||
+||             |     |     ||             |          ||             |          ||
+
+-- signed 2026-02-08T00:59:30Z
+
+
+segment computation working.
+
+all that remains is rendering and loading
+
+-- signed 2026-02-08T07:40:43Z
