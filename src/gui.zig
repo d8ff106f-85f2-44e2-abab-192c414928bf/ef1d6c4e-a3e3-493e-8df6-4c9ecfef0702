@@ -10,7 +10,7 @@ fn mvd(m: [9]f32, v: [3]f32, d: [3]f32) [3]f32 {
         m[6]*(v[0]+d[0]) + m[7]*(v[1]+d[1]) + m[8]*(v[2]+d[2]),
     };
 }
-const Cut = @import("sdl_callbacks.zig").Cut;
+const Cut = @import("main.zig").Cut;
 pub fn drawScene(renderer: *C.SDL_Renderer, w: f32, h: f32, zoom: f32, m: [9]f32, cuts: []const Cut, vertices: [3][]const f32) void {
     const scale = (@min(w,h) / 2) * @exp2(zoom / 12);
     const offset: [3]f32 = .{ -0.5, -0.5, -0.5 };

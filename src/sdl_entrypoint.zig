@@ -1,6 +1,6 @@
 const C = @import("sdl_imports.zig").C;
 
-const callbacks = @import("sdl_callbacks.zig");
+const callbacks = @import("main.zig");
 pub fn main() !u8 {
     app_err.reset();
     var empty_argv: [0:null]?[*:0]u8 = .{};
