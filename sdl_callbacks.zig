@@ -3,6 +3,7 @@ window: *C.SDL_Window,
 renderer: *C.SDL_Renderer,
 allocation: []AppState,
 initialized: bool = false,
+str: [256:0]u8,
 
 
 const std = @import("std");
@@ -13,8 +14,18 @@ const errify = sdl_imports.errify;
 const window_w = 640;
 const window_h = 480;
 
+var dbg_str: []u8 = undefined;
+
 pub fn sdlAppInit(statestore: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
     _ = argv;
+    
+    var arena: std.heap.ArenaAllocator = .init(std.heap.c_allocator);
+    errdefer arena.deinit();
+    const allocator = arena.allocator();
+    dbg_str = try allocator.alloc(u8, 256);
+    const src_str = "hello world?\x00";
+    dbg_str[0..src_str.len].* = src_str.*;
+
 
     const store = statestore orelse return error.NoStateStore;
 
@@ -25,6 +36,8 @@ pub fn sdlAppInit(statestore: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
     store.* = state;
     state.allocation = state_alloc;
     state.initialized = false;
+    const str = "uninitialized\x00";
+    state.str[0..str.len].* = str.*;
 
     try errify(C.SDL_Init(C.SDL_INIT_VIDEO));
     try errify(C.SDL_SetHint(C.SDL_HINT_RENDER_LINE_METHOD, "2"));
@@ -34,6 +47,7 @@ pub fn sdlAppInit(statestore: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
 
     state.initialized = true;
     errdefer comptime unreachable;
+
 
     return C.SDL_APP_CONTINUE;
 }
@@ -46,7 +60,8 @@ pub fn sdlAppIterate(stateptr: ?*anyopaque) !C.SDL_AppResult {
     try errify(C.SDL_RenderClear(appstate.renderer));
 
     try errify(C.SDL_SetRenderDrawColor(appstate.renderer, 0xff, 0xff, 0xff, 0xff));
-    try errify(C.SDL_RenderDebugText(appstate.renderer, 0, 0, "hello world?"));
+    try errify(C.SDL_RenderDebugText(appstate.renderer, 0, 0, &appstate.str));
+    try errify(C.SDL_RenderDebugText(appstate.renderer, 0, 100, dbg_str.ptr));
 
     try errify(C.SDL_RenderPresent(appstate.renderer));
     
@@ -55,7 +70,6 @@ pub fn sdlAppIterate(stateptr: ?*anyopaque) !C.SDL_AppResult {
 
 pub fn sdlAppEvent(stateptr: ?*anyopaque, event: *C.SDL_Event) !C.SDL_AppResult {
     const appstate: *AppState = @alignCast(@ptrCast(stateptr orelse return error.NoStatePtr));
-    _ = appstate;
 
     switch (event.type) {
         C.SDL_EVENT_QUIT => {
@@ -79,13 +93,21 @@ pub fn sdlAppEvent(stateptr: ?*anyopaque, event: *C.SDL_Event) !C.SDL_AppResult 
         //         else => {},
         //     }
         // },
-        // C.SDL_EVENT_MOUSE_BUTTON_DOWN, C.SDL_EVENT_MOUSE_BUTTON_UP => {
-        //     const down = event.type == C.SDL_EVENT_MOUSE_BUTTON_DOWN;
-        //     switch (event.button.button) {
-        //         C.SDL_BUTTON_LEFT => phcon.m_left = down,
-        //         else => {},
-        //     }
-        // },
+        C.SDL_EVENT_MOUSE_BUTTON_DOWN, C.SDL_EVENT_MOUSE_BUTTON_UP => {
+            const down = event.type == C.SDL_EVENT_MOUSE_BUTTON_DOWN;
+            switch (event.button.button) {
+                C.SDL_BUTTON_LEFT => {
+                    if (down) {
+                        const str = "down\x00";
+                        appstate.str[0..str.len].* = str.*;
+                    } else {
+                        const str = "up\x00";
+                        appstate.str[0..str.len].* = str.*;
+                    }
+                },
+                else => {},
+            }
+        },
         // C.SDL_EVENT_MOUSE_MOTION => {
         //     phcon.m_xrel += event.motion.xrel;
         // },
