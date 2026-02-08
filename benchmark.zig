@@ -11,7 +11,7 @@ const Cut = struct {
     v2: u32, // truncated vertex 2
     w1: f32, // weight of truncated vertex 1
     w2: f32, // weight of truncated vertex 2
-    pub fn calcCoords(cut: Cut, xs: []f32, ys: []f32, zs: []f32) [2][3]f32 {
+    pub fn calcCoords(cut: Cut, xs: []const f32, ys: []const f32, zs: []const f32) [2][3]f32 {
         const p0: @Vector(3, f32) = .{ xs[cut.v0], ys[cut.v0], zs[cut.v0] };
         const p1: @Vector(3, f32) = .{ xs[cut.v1], ys[cut.v1], zs[cut.v1] };
         const p2: @Vector(3, f32) = .{ xs[cut.v2], ys[cut.v2], zs[cut.v2] };

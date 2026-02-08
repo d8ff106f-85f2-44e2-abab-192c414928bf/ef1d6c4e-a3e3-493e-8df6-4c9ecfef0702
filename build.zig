@@ -26,7 +26,7 @@ pub fn build(b: *std.Build) void {
     }
 
     const app_mod = b.createModule(.{
-        .root_source_file = b.path("sdl_entrypoint.zig"),
+        .root_source_file = b.path("src/sdl_entrypoint.zig"),
         .target = target,
         .optimize = optimize,
         .link_libc = target.result.os.tag == .emscripten,
