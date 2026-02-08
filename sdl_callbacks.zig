@@ -1,48 +1,60 @@
+const AppState = @This();
+window: *C.SDL_Window,
+renderer: *C.SDL_Renderer,
+allocation: []AppState,
+initialized: bool = false,
+
+
+const std = @import("std");
 const sdl_imports = @import("sdl_imports.zig");
 const C = sdl_imports.C;
 const errify = sdl_imports.errify; 
 
-var fully_initialized = false;
-
 const window_w = 640;
 const window_h = 480;
-var window: *C.SDL_Window = undefined;
-var renderer: *C.SDL_Renderer = undefined;
 
-pub fn sdlAppInit(appstate: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
-    _ = appstate;
+pub fn sdlAppInit(statestore: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
     _ = argv;
 
+    const store = statestore orelse return error.NoStateStore;
+
+    const state_alloc = try std.heap.c_allocator.alloc(AppState, 1);
+    errdefer std.heap.c_allocator.free(state_alloc);
+
+    const state = &state_alloc[0];
+    store.* = state;
+    state.allocation = state_alloc;
+    state.initialized = false;
+
     try errify(C.SDL_Init(C.SDL_INIT_VIDEO));
+    try errify(C.SDL_SetHint(C.SDL_HINT_RENDER_LINE_METHOD, "2"));
+    try errify(C.SDL_CreateWindowAndRenderer("game window", window_w, window_h, 0, @ptrCast(&state.window), @ptrCast(&state.renderer)));
+    errdefer C.SDL_DestroyWindow(state.window);
+    errdefer C.SDL_DestroyRenderer(state.renderer);
 
-    errify(C.SDL_SetHint(C.SDL_HINT_RENDER_LINE_METHOD, "2")) catch {};
-
-    try errify(C.SDL_CreateWindowAndRenderer("game window", window_w, window_h, 0, @ptrCast(&window), @ptrCast(&renderer)));
-    errdefer C.SDL_DestroyWindow(window);
-    errdefer C.SDL_DestroyRenderer(renderer);
-
-    fully_initialized = true;
+    state.initialized = true;
     errdefer comptime unreachable;
 
     return C.SDL_APP_CONTINUE;
 }
 
 
-pub fn sdlAppIterate(appstate: ?*anyopaque) !C.SDL_AppResult {
-    _ = appstate;
+pub fn sdlAppIterate(stateptr: ?*anyopaque) !C.SDL_AppResult {
+    const appstate: *AppState = @alignCast(@ptrCast(stateptr orelse return error.NoStatePtr));
 
-    try errify(C.SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xff));
-    try errify(C.SDL_RenderClear(renderer));
+    try errify(C.SDL_SetRenderDrawColor(appstate.renderer, 0x00, 0x00, 0x00, 0xff));
+    try errify(C.SDL_RenderClear(appstate.renderer));
 
-    try errify(C.SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xff));
-    try errify(C.SDL_RenderDebugText(renderer, 0, 0, "hello world?"));
+    try errify(C.SDL_SetRenderDrawColor(appstate.renderer, 0xff, 0xff, 0xff, 0xff));
+    try errify(C.SDL_RenderDebugText(appstate.renderer, 0, 0, "hello world?"));
 
-    try errify(C.SDL_RenderPresent(renderer));
+    try errify(C.SDL_RenderPresent(appstate.renderer));
     
     return C.SDL_APP_CONTINUE;
 }
 
-pub fn sdlAppEvent(appstate: ?*anyopaque, event: *C.SDL_Event) !C.SDL_AppResult {
+pub fn sdlAppEvent(stateptr: ?*anyopaque, event: *C.SDL_Event) !C.SDL_AppResult {
+    const appstate: *AppState = @alignCast(@ptrCast(stateptr orelse return error.NoStatePtr));
     _ = appstate;
 
     switch (event.type) {
@@ -83,13 +95,15 @@ pub fn sdlAppEvent(appstate: ?*anyopaque, event: *C.SDL_Event) !C.SDL_AppResult 
     return C.SDL_APP_CONTINUE;
 }
 
-pub fn sdlAppQuit(appstate: ?*anyopaque, result: anyerror!C.SDL_AppResult) void {
-    _ = appstate;
+pub fn sdlAppQuit(stateptr: ?*anyopaque, result: anyerror!C.SDL_AppResult) void {
+    const appstate: *AppState = @alignCast(@ptrCast(stateptr orelse return));
     _ = result catch {};
 
-    if (fully_initialized) {
-        C.SDL_DestroyRenderer(renderer);
-        C.SDL_DestroyWindow(window);
-        fully_initialized = false;
+    if (appstate.initialized) {
+        C.SDL_DestroyRenderer(appstate.renderer);
+        C.SDL_DestroyWindow(appstate.window);
+        appstate.initialized = false;
     }
+
+    std.heap.c_allocator.free(appstate.allocation);
 }
