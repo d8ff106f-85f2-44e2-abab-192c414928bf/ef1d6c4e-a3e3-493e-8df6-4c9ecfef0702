@@ -1,4 +1,6 @@
-const C = @import("sdl_imports.zig").C;
+const sdl_imports = @import("sdl_imports.zig");
+const C = sdl_imports.C;
+const errify = sdl_imports.errify; 
 
 var fully_initialized = false;
 
@@ -12,7 +14,6 @@ pub fn sdlAppInit(appstate: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
     _ = argv;
 
     try errify(C.SDL_Init(C.SDL_INIT_VIDEO));
-    // defer C.SDL_Quit();
 
     errify(C.SDL_SetHint(C.SDL_HINT_RENDER_LINE_METHOD, "2")) catch {};
 
@@ -91,25 +92,4 @@ pub fn sdlAppQuit(appstate: ?*anyopaque, result: anyerror!C.SDL_AppResult) void 
         C.SDL_DestroyWindow(window);
         fully_initialized = false;
     }
-}
-
-/// Converts the return value of an SDL function to an error union.
-inline fn errify(value: anytype) error{SdlError}!switch (@typeInfo(@TypeOf(value))) {
-    .bool => void,
-    .pointer, .optional => @TypeOf(value.?),
-    .int => |info| switch (info.signedness) {
-        .signed => @TypeOf(@max(0, value)),
-        .unsigned => @TypeOf(value),
-    },
-    else => @compileError("unerrifiable type: " ++ @typeName(@TypeOf(value))),
-} {
-    return switch (@typeInfo(@TypeOf(value))) {
-        .bool => if (!value) error.SdlError,
-        .pointer, .optional => value orelse error.SdlError,
-        .int => |info| switch (info.signedness) {
-            .signed => if (value >= 0) @max(0, value) else error.SdlError,
-            .unsigned => if (value != 0) value else error.SdlError,
-        },
-        else => comptime unreachable,
-    };
 }
