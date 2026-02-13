@@ -79,6 +79,7 @@ pub fn build(b: *std.Build) void {
             }
         }
 
+        run_emcc.addArg("-sALLOW_MEMORY_GROWTH");
         if (target.result.cpu.arch == .wasm64) {
             run_emcc.addArg("-sMEMORY64");
         }
