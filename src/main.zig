@@ -111,6 +111,7 @@ pub fn sdlAppIterate(stateptr: ?*anyopaque) !C.SDL_AppResult {
     const appstate: *AppState = @alignCast(@ptrCast(stateptr orelse return error.NoStatePtr));
 
     if (last_slider_value != appstate.sliderval) {
+        last_slider_value = appstate.sliderval;
         appstate.edges = recalculate_cuts(appstate.sliderval);
     }
 
