@@ -182,3 +182,52 @@ segment computation working.
 all that remains is rendering and loading
 
 -- signed 2026-02-08T07:40:43Z
+
+
+
+
+
+
+
+starting challenge part 2
+
+parser: start with @embedfile() instead of dealing with io
+
+may rewrite parser in js if can't figure out wasm io
+
+
+nodes sparse table
+||   owner  | <T> + *data ||
+||----------|-------------||
+||          |             ||
+|| u2 + u30 |  u1 + u31   ||
+||          |             ||
+
+node<non-parametric> dense table
+||  x  |  y  |  z  ||
+||-----|-----|-----||
+||     |     |     ||
+|| f32 | f32 | f32 ||
+||     |     |     ||
+
+elements sparse table
+||   owner  | <T> | *data ||
+||----------|-----|-------||
+||          |     |       ||
+|| u2 + u30 | u32 |  u32  ||
+||          |     |       ||
+
+elem<tet> dense table
+|| v0 v1 v2 v3 ||
+||-------------||
+||             ||
+||   [4]u32    ||
+||             ||
+(points to dense index, not sparse index)
+
+
+No backlink index in dense tables since we're not modifying after load
+
+Parse steps:
+1. load nodes, write coord in dense and record location in sparse
+2. load tets, lookup sparse node table for dense location then record in sparse elem table
