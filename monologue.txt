@@ -231,3 +231,5 @@ No backlink index in dense tables since we're not modifying after load
 Parse steps:
 1. load nodes, write coord in dense and record location in sparse
 2. load tets, lookup sparse node table for dense location then record in sparse elem table
+
+-- signed 2026-02-15T23:44:33Z
