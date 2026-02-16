@@ -269,3 +269,39 @@ can do light parsing of elem/node count beforehand and return to js to allocate,
 this is early loding stage so no need to worry about wasm boundary latency
 
 -- signed 2026-02-16T00:14:06Z
+
+
+
+
+init:
+
+    const geometry = new THREE.BufferGeometry();
+    const pos_arr = new Float32Array(4 * tets_count);
+    const pos_attr = new THREE.BufferAttribute( pos_arr, 3 );
+    geometry.setAttribute('position', att_pos);
+    geometry.setDrawRange(0, 0);
+    const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+    const segments = new THREE.LineSegments( geometry, material );
+
+
+
+
+update:
+
+    const geometry = segments.geometry;
+    const pos_attr = geometry.getAttribute('position');
+    const pos_arr = pos_attr.array;
+
+
+    const cuts_count = wasm.calcuate_slice(pos_arr, slider.value);
+
+
+    geometry.setDrawRange(0, cuts_count);
+    pos_attr.clearUpdateRanges();
+    pos_attr.addUpdateRange();
+    pos_attr.needsUpdate();
+
+
+
+
+-- signed 2026-02-16T00:56:23Z
