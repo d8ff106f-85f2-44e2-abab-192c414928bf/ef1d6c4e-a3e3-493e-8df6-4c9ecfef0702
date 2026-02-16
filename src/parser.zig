@@ -23,7 +23,13 @@ fn findSection(comptime kw: []const u8, str: []const u8) ![]const u8 {
     return error.SectionMalformed;
 }
 
-pub fn main() !void {
+pub fn main(
+    node_id_buf: []u32,
+    node_x_buf: []f32, 
+    node_y_buf: []f32, 
+    node_z_buf: []f32, 
+    elem_v_buf: [][4]u32,
+) !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     const alloc = arena.allocator();
  
@@ -51,10 +57,10 @@ pub fn main() !void {
     std.debug.print("nodes: {d} {d} {d}\n", .{ node_tot, node_min, node_max });
 
     const node_lut_buf: []SparseIndex = try alloc.alloc(SparseIndex, node_max - node_min + 1);
-    const node_id_buf: []u32 = try alloc.alloc(u32, node_tot);
-    const node_x_buf: []f32 = try alloc.alloc(f32, node_tot);
-    const node_y_buf: []f32 = try alloc.alloc(f32, node_tot);
-    const node_z_buf: []f32 = try alloc.alloc(f32, node_tot);
+    // const node_id_buf: []u32 = try alloc.alloc(u32, node_tot);
+    // const node_x_buf: []f32 = try alloc.alloc(f32, node_tot);
+    // const node_y_buf: []f32 = try alloc.alloc(f32, node_tot);
+    // const node_z_buf: []f32 = try alloc.alloc(f32, node_tot);
     var nodes: Nodes = .{
         .min = node_min,
         .max = node_max,
@@ -83,12 +89,12 @@ pub fn main() !void {
                 const node_type = it.next() orelse return error.NodeHeadMalformed;
                 const node_size = it.next() orelse return error.NodeHeadMalformed;
 
-                const dim = try std.fmt.parseUnsigned(u32, owner_dim, 10);
+                _ = try std.fmt.parseUnsigned(u32, owner_dim, 10);
                 const typ = try std.fmt.parseUnsigned(u32, node_type, 10);
                 const num = try std.fmt.parseUnsigned(u32, node_size, 10);
                 _ = owner_tag;
 
-                if (dim != 3 or typ != 0) {
+                if (typ != 0) {
                     skip_count = num * 2;
                     continue :parse .skip;
                 }
@@ -155,7 +161,7 @@ pub fn main() !void {
 
     const elem_lut_buf: []SparseIndex = try alloc.alloc(SparseIndex, elem_max - elem_min + 1);
     const elem_id_buf: []u32 = try alloc.alloc(u32, elem_tot);
-    const elem_v_buf: [][4]u32 = try alloc.alloc([4]u32, elem_tot);
+    // const elem_v_buf: [][4]u32 = try alloc.alloc([4]u32, elem_tot);
     var elems: Elems = .{
         .min = elem_min,
         .max = elem_max,
@@ -207,7 +213,14 @@ pub fn main() !void {
                 const b = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
                 const c = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
                 const d = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
-                try elems.set(n, .{ a, b, c, d });
+                const va = try nodes.where(a) orelse {
+                    std.debug.print("failed to find node {any} at index {any}", .{a, n});
+                    return error.NodeNotFound;
+                };
+                const vb = try nodes.where(b) orelse return error.NodeNotFound;
+                const vc = try nodes.where(c) orelse return error.NodeNotFound;
+                const vd = try nodes.where(d) orelse return error.NodeNotFound;
+                try elems.set(n, .{ va, vb, vc, vd });
                 body_count -= 1;
                 continue :parse .body;
             },
@@ -233,6 +246,9 @@ pub fn main() !void {
         std.debug.print("index: {any}, verts: {any}\n", .{elems.id[i], elems.v[i]});
     }
 
+    for (node_id_buf, 0..) |*n, i| {
+        n.* = @truncate(i);
+    }
 }
 
 const SparseIndex = enum(u32) {

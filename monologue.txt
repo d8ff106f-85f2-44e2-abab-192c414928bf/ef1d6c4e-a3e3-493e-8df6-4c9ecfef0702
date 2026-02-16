@@ -328,3 +328,23 @@ use std.mem.tokenizeAny to get iterator
 completed and validated parser
 
 -- signed 2026-02-16T07:13:39Z
+
+
+
+shoehorned the parser main into sdl demo with hardcoded vert count to test perf
+
+SDL extremely slow due to drawing sheer number of segments
+
+disabling drawing the mesh and only the slider makes it blazing fast
+
+around 300k cuts at max
+
+
+looks sooooo trippy, I love it, esp how the void shows up near the center.
+
+
+sleeping, fix it tmr, should take about an hour or two to reorganize code.
+
+remaining time is react renderer. Validate render perf with webgpu renderer first
+
+-- signed 2026-02-16T09:13:29Z

@@ -76,7 +76,7 @@ pub fn sdlAppInit(statestore: ?*?*anyopaque, argv: [][*:0]u8) !C.SDL_AppResult {
 
     cuts_buffer = try allocator.alloc(Cut, TETS_LENGTH * 4);
 
-    core.generate_dummy_mesh(SIDE_LENGTH, ns_src, xs_src, ys_src, zs_src, tets);
+    try @import("parser.zig").main(ns_src, xs_src, ys_src, zs_src, tets);
 
 
     const starting_plane_eqn: [3]f32 = .{ 1,2,1 };
@@ -270,8 +270,8 @@ const Quat = struct {
 
 const SIDE_LENGTH = 100;
 const NODE_LENGTH = SIDE_LENGTH + 1;
-const VERT_LENGTH = NODE_LENGTH * NODE_LENGTH * NODE_LENGTH;
-const TETS_LENGTH = SIDE_LENGTH * SIDE_LENGTH * SIDE_LENGTH * 5;
+const VERT_LENGTH = 797606;
+const TETS_LENGTH = 4825621;
 
 var ns_src: []u32 = undefined;
 var xs_src: []f32 = undefined;

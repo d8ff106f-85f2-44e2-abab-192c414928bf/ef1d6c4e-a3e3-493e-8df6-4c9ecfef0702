@@ -76,8 +76,8 @@ pub fn drawScene(renderer: *C.SDL_Renderer, w: f32, h: f32, zoom: f32, m: [9]f32
         const p0 = mvd(m, pair[0], offset);
         const p1 = mvd(m, pair[1], offset);
         const pts: [2]C.SDL_FPoint = .{
-            .{ .x = p0[0] * scale + w/2, .y = p0[1] * scale + h/2 },
-            .{ .x = p1[0] * scale + w/2, .y = p1[1] * scale + h/2 },
+            .{ .x = p0[0] * scale / 200.0 + w/2, .y = p0[1] * scale / 200.0 + h/2 },
+            .{ .x = p1[0] * scale / 200.0 + w/2, .y = p1[1] * scale / 200.0 + h/2 },
         };
         _ = C.SDL_RenderLines(
             renderer,
