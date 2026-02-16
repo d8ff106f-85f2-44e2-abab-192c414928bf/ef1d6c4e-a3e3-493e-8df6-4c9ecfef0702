@@ -233,3 +233,39 @@ Parse steps:
 2. load tets, lookup sparse node table for dense location then record in sparse elem table
 
 -- signed 2026-02-15T23:44:33Z
+
+
+parse number of point, curve, surface, and volume entities
+
+for number of points, skip, line_index++
+for number of curves, skip, line_index++
+for number of surfac, skip, line_index++
+for number of volume:
+    record aabb, add pending allocation
+
+parse number of nodes, allocate node dense table (will be extra, since some are non-volume)
+parse min/max node indices, allocate node sparse table
+for nodes:
+    skip if not belonging to volume entity
+    skip if parametric
+    record xyz in dense, record dense location in sparse at nodetag
+
+parse number of elems, allocate elem dense table (extras for non-vol)
+parse min/max elem indices, allocate elem sparse table
+for elems:
+    skip if not belonging to volume entity
+    skip if not tetrahedron
+    for nodetags, lookup sparse node table and write dense location to dense elem table, record written location
+
+just for challenge, return dense elem table and dense node table and discard sparse tables
+
+const TetSoup = struct {
+    aabb: [4]f32,
+    nodes: [3][]f32,
+    elems: [][4]u32,
+};
+
+can do light parsing of elem/node count beforehand and return to js to allocate, then call wasm for loading node/elem.
+this is early loding stage so no need to worry about wasm boundary latency
+
+-- signed 2026-02-16T00:14:06Z
