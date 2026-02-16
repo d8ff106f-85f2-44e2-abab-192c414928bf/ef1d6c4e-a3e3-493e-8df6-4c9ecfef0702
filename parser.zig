@@ -12,7 +12,7 @@ fn findSection(comptime kw: []const u8, str: []const u8) ![]const u8 {
             }
         }
     }
-    if (start < open.len) return error.NotFound;
+    if (start < open.len) return error.SectionNotFound;
     for (str[start..], start..) |c, i| {
         if (c == '$' and str[i..].len >= close.len) {
             if (std.mem.eql(u8, str[i..][0..close.len], close)) {
@@ -20,7 +20,7 @@ fn findSection(comptime kw: []const u8, str: []const u8) ![]const u8 {
             }
         }
     }
-    return error.MalformedSection;
+    return error.SectionMalformed;
 }
 
 pub fn main() !void {
@@ -79,9 +79,9 @@ pub fn main() !void {
                 var it = std.mem.tokenizeScalar(u8, line, ' ');
 
                 const owner_dim = it.next().?; // null should be unreachable
-                const owner_tag = it.next() orelse return error.MalformedNodeHeader;
-                const node_type = it.next() orelse return error.MalformedNodeHeader;
-                const node_size = it.next() orelse return error.MalformedNodeHeader;
+                const owner_tag = it.next() orelse return error.NodeHeadMalformed;
+                const node_type = it.next() orelse return error.NodeHeadMalformed;
+                const node_size = it.next() orelse return error.NodeHeadMalformed;
 
                 const dim = try std.fmt.parseUnsigned(u32, owner_dim, 10);
                 const typ = try std.fmt.parseUnsigned(u32, node_type, 10);
@@ -96,7 +96,7 @@ pub fn main() !void {
                 body_count = num;
                 coord_iter = index_iter;
                 for (0..body_count) |_| {
-                    _ = coord_iter.next() orelse return error.MalformedNodeBody;
+                    _ = coord_iter.next() orelse return error.NodeBodyMalformed;
                 }
 
                 continue :parse .body;
@@ -106,12 +106,12 @@ pub fn main() !void {
                     index_iter = coord_iter;
                     continue :parse .head;
                 }
-                const index_line = index_iter.next() orelse return error.MalformedNodeBody;
-                const coord_line = coord_iter.next() orelse return error.MalformedNodeBody;
+                const index_line = index_iter.next() orelse return error.NodeBodyMalformed;
+                const coord_line = coord_iter.next() orelse return error.NodeBodyMalformed;
                 var it = std.mem.tokenizeScalar(u8, coord_line, ' ');
-                const x = try std.fmt.parseFloat(f32, it.next() orelse return error.MalformedNodeBody);
-                const y = try std.fmt.parseFloat(f32, it.next() orelse return error.MalformedNodeBody);
-                const z = try std.fmt.parseFloat(f32, it.next() orelse return error.MalformedNodeBody);
+                const x = try std.fmt.parseFloat(f32, it.next() orelse return error.NodeBodyMalformed);
+                const y = try std.fmt.parseFloat(f32, it.next() orelse return error.NodeBodyMalformed);
+                const z = try std.fmt.parseFloat(f32, it.next() orelse return error.NodeBodyMalformed);
                 const n = try std.fmt.parseUnsigned(u32, index_line, 10);
                 try nodes.set(n, x, y, z);
                 body_count -= 1;
@@ -179,9 +179,9 @@ pub fn main() !void {
                 head_count += 1;
                 // std.debug.print("head: {any}\n", .{head_count});
                 const owner_dim = it.next().?; // null should be unreachable
-                const owner_tag = it.next() orelse return error.MalformedElemHeader;
-                const elem_type = it.next() orelse return error.MalformedElemHeader;
-                const elem_size = it.next() orelse return error.MalformedElemHeader;
+                const owner_tag = it.next() orelse return error.ElemHeadMalformed;
+                const elem_type = it.next() orelse return error.ElemHeadMalformed;
+                const elem_size = it.next() orelse return error.ElemHeadMalformed;
 
                 const dim = try std.fmt.parseUnsigned(u32, owner_dim, 10);
                 const typ = try std.fmt.parseUnsigned(u32, elem_type, 10);
@@ -200,13 +200,13 @@ pub fn main() !void {
                 if (body_count <= 0) {
                     continue :parse .head;
                 }
-                const index_line = index_iter.next() orelse return error.MalformedElemBody;
+                const index_line = index_iter.next() orelse return error.ElemBodyMalformed;
                 var it = std.mem.tokenizeScalar(u8, index_line, ' ');
-                const n = try std.fmt.parseUnsigned(u32, it.next() orelse return error.MalformedElemBody, 10);
-                const a = try std.fmt.parseUnsigned(u32, it.next() orelse return error.MalformedElemBody, 10);
-                const b = try std.fmt.parseUnsigned(u32, it.next() orelse return error.MalformedElemBody, 10);
-                const c = try std.fmt.parseUnsigned(u32, it.next() orelse return error.MalformedElemBody, 10);
-                const d = try std.fmt.parseUnsigned(u32, it.next() orelse return error.MalformedElemBody, 10);
+                const n = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
+                const a = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
+                const b = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
+                const c = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
+                const d = try std.fmt.parseUnsigned(u32, it.next() orelse return error.ElemBodyMalformed, 10);
                 try elems.set(n, .{ a, b, c, d });
                 body_count -= 1;
                 continue :parse .body;
