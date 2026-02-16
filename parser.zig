@@ -20,7 +20,7 @@ fn findSection(comptime kw: []const u8, str: []const u8) ![]const u8 {
             }
         }
     }
-    return error.Malformed;
+    return error.MalformedSection;
 }
 
 pub fn main() !void {
