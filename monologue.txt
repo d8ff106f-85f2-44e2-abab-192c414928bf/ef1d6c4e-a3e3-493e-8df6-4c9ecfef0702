@@ -305,3 +305,26 @@ update:
 
 
 -- signed 2026-02-16T00:56:23Z
+
+
+
+implemented sparse set, next step is to actually loop through the file
+
+take the sliced text
+
+first line is always metadata, so just read until linebreak
+
+initialize Node struct, allocate lut and data 
+
+next line, tokenize by space, read last entry to find how many entries in a block
+if skipping, skip by n*2 lines
+if parsing, iterate by line to get index, then iterator for n linees to find the data
+
+use std.mem.tokenizeAny to get iterator
+
+-- signed 2026-02-16T04:07:55Z
+
+
+completed and validated parser
+
+-- signed 2026-02-16T07:13:39Z
