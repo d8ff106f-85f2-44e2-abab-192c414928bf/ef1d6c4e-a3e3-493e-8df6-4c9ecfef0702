@@ -1,5 +1,4 @@
 const std = @import("std");
-const file_content = @embedFile("core_sample_hybrid_CFD.msh");
 
 const SparseIndex = enum(u32) {
     dead = 0,
@@ -175,6 +174,10 @@ const Elems = struct {
 pub fn main() !void {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     const alloc = arena.allocator();
+ 
+    const file_content = try std.fs.cwd().readFileAlloc(alloc, "core_sample_hybrid_CFD.msh", 1024 * 1024 * 1024);
+
+
 
     const node_section = try findSection("Nodes", file_content);
     const elem_section = try findSection("Elements", file_content);
@@ -271,7 +274,7 @@ pub fn main() !void {
         }
     }
 
-    std.debug.print("elem count: {any}\n", .{nodes.len});
+    std.debug.print("node count: {any}\n", .{nodes.len});
 
     for (0..10) |i| {
         std.debug.print("index: {any}, coord: {any} {any} {any}\n", .{nodes.id[i], nodes.x[i], nodes.y[i], nodes.z[i]});
@@ -279,9 +282,8 @@ pub fn main() !void {
 
     std.debug.print("...\n", .{});
 
-    for (0..10) |i| {
-        const j = nodes.len - i - 1;
-        std.debug.print("index: {any}, coord: {any} {any} {any}\n", .{nodes.id[j], nodes.x[j], nodes.y[j], nodes.z[j]});
+    for (nodes.len - 1 - 10 .. nodes.len) |i| {
+        std.debug.print("index: {any}, coord: {any} {any} {any}\n", .{nodes.id[i], nodes.x[i], nodes.y[i], nodes.z[i]});
     }
 
     
@@ -375,9 +377,8 @@ pub fn main() !void {
 
     std.debug.print("...\n", .{});
 
-    for (0..10) |i| {
-        const j = elems.len - i - 1;
-        std.debug.print("index: {any}, verts: {any}\n", .{elems.id[j], elems.v[j]});
+    for (elems.len - 1 - 10 .. elems.len) |i| {
+        std.debug.print("index: {any}, verts: {any}\n", .{elems.id[i], elems.v[i]});
     }
 
 }
