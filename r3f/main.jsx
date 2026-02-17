@@ -16,16 +16,20 @@ let last_slider_value = 0;
     const slider = document.getElementById('slider');
     slider.addEventListener("input", (e)=>slider_value = event.target.value);
     slider_value = slider.value;
+    const button = document.getElementById('button');
+    button.addEventListener("click", init );
+
 }
 
 async function init() {
+    const button = document.getElementById('button');
+    button.disabled = true;
+    button.textContent = 'Reading model...';
     
-    const file = await (await fetch("https://github.com/d8ff106f-85f2-44e2-abab-192c414928bf/ef1d6c4e-a3e3-493e-8df6-4c9ecfef0702/releases/download/r3f-asset/core_sample_hybrid_CFD.msh")).blob();
-    const file_size = file.size;
-    const file_stream = file.stream();
+    const upload = document.getElementById('upload');
 
-    // const file_stream = upload.files[0].stream();
-    // const file_size = upload.files[0].size;
+    const file_stream = upload.files[0].stream();
+    const file_size = upload.files[0].size;
 
 
     const parser_memory = new WebAssembly.Memory({
@@ -59,6 +63,7 @@ async function init() {
     }
 
     console.log("parsing model...");
+    button.textContent = 'Processing model...';
     const meta_ptr = parser.instance.exports.parseModel(file_ptr, file_size);
     if (meta_ptr == 0) {
         console.log("failed to parse model");
@@ -132,9 +137,11 @@ async function init() {
     console.log(zs_dst[nodes_count-1]);
 
     console.log("reoreinting...");
+    button.textContent = 'Reorienting...';
     slicer.instance.exports.reorient(data_ptr, 0,0,0,1 );
 
     console.log("reslicing...");
+    button.textContent = 'Reslicing...';
     const cuts = slicer.instance.exports.reslice(data_ptr, slider_value);
     console.log(cuts);
 
@@ -154,6 +161,10 @@ async function init() {
     position.clearUpdateRanges();
     position.addUpdateRange(update_start, update_count);
     position.needsUpdate = true;
+
+
+    
+    button.textContent = 'Done.';
 
 }
 
@@ -187,14 +198,12 @@ function Cuts() {
     geometry.setAttribute('position', position);
     geometry.setDrawRange(0, 2);
 
-    init();
     return <lineSegments geometry={geometry} material={material} />
 }
 
 createRoot(document.getElementById("main")).render(
     <Canvas camera={{ position: [0, 0, -100] }}>
         <Cuts />
-        <gridHelper />
         <OrbitControls  enableDamping={false} />
     </Canvas>
 )
