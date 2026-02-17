@@ -1,10 +1,23 @@
 <input type="file" id="upload">
-<button id="button" onclick="onUpload()">Load Model</button>
+<button id="button" onclick="onUpload()">Load Model</button><br>
+<input type="range" id="slider" min="0" max="1" valeu="0.5" step="0.0000152587890625" style="width:100%">
 <pre id="output"></pre>
 <script>
 const output = document.getElementById('output');
 const button = document.getElementById('button');
 const upload = document.getElementById('upload');
+const slider = document.getElementById('slider');
+slider.addEventListener("input", handle_slider);
+let slicer_wasm = {};
+let slicer_data = 0;
+let slider_value = slider.value;
+function handle_slider(event) {
+    slider_value = event.target.value;
+    const cuts = slicer_wasm.instance.exports.reslice(slicer_data, slider_value);
+    console.log(cuts);
+}
+
+
 async function onUpload() {
     button.disabled = true;
     const file_stream = upload.files[0].stream();
@@ -112,17 +125,25 @@ async function onUpload() {
     zs_dst.set(zs_src);
     tets_dst.set(tets_src);
 
+    console.log(ns_dst[0]);
     console.log(xs_dst[0]);
     console.log(ys_dst[0]);
     console.log(zs_dst[0]);
 
+    console.log(ns_dst[nodes_count-1]);
     console.log(xs_dst[nodes_count-1]);
     console.log(ys_dst[nodes_count-1]);
     console.log(zs_dst[nodes_count-1]);
 
+    console.log("reoreinting...");
     slicer.instance.exports.reorient(data_ptr, 0.5, 0.5, 0.5, 0.5 );
-    const cuts = slicer.instance.exports.reslice(data_ptr, 0.5);
 
+    console.log("reslicing...");
+    const cuts = slicer.instance.exports.reslice(data_ptr, 0.5);
+    console.log(cuts);
+
+    slicer_wasm = slicer;
+    slicer_data = data_ptr;
 
     button.disabled = false;
 }

@@ -241,7 +241,7 @@ fn parse_main(file_content: []const u8) !*const Meta {
     //     std.debug.print("index: {any}, verts: {any}\n", .{elems.id[i], elems.v[i]});
     // }
 
-    for (nodes.id[0..nodes.len], 0..) |*n, i| {
+    for (nodes.id, 0..) |*n, i| {
         n.* = @truncate(i);
     }
 

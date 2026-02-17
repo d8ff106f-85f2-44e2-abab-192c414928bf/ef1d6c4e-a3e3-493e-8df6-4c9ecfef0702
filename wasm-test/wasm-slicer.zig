@@ -358,7 +358,6 @@ fn recalculate_plane(meta: *Meta, q: Quat) void {
     const mins = meta.mins[0..meta.elems_count];
     const maxs = meta.maxs[0..meta.elems_count];
 
-    
     @memcpy(xs_unsorted, xs_src);
     @memcpy(ys_unsorted, ys_src);
     @memcpy(zs_unsorted, zs_src);
