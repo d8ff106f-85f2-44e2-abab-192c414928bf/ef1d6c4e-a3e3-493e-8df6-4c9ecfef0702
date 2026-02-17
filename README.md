@@ -32,7 +32,7 @@ tetrahedrons table
 || v0 v1 v2 v3 | min | max || min_sort id | min_sort || max_sort id | max_sort ||
 ||             |     |     ||             |          ||             |          ||
 ||             |     |     ||             |          ||             |          ||
-
+```
 
 ### Parsing
 
