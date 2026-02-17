@@ -10,7 +10,6 @@ let geometry = {};
 let slicer_wasm = {};
 let slicer_data = 0;
 
-
 let slider_value = 0;
 let last_slider_value = 0;
 {
@@ -133,7 +132,7 @@ async function init() {
     console.log(zs_dst[nodes_count-1]);
 
     console.log("reoreinting...");
-    slicer.instance.exports.reorient(data_ptr, 0.5, 0.5, 0.5, 0.5 );
+    slicer.instance.exports.reorient(data_ptr, 0,0,0,1 );
 
     console.log("reslicing...");
     const cuts = slicer.instance.exports.reslice(data_ptr, slider_value);
@@ -147,7 +146,14 @@ async function init() {
 
     position = new THREE.BufferAttribute( buffer , 3 );
     geometry.setAttribute('position', position);
-    geometry.setDrawRange(0, cuts);
+    const update_start = 0; // f32 at index 0
+    const update_count = cuts * 6; // six f32 per cut
+
+    const verts_count = cuts * 2; // two verts per cut
+    geometry.setDrawRange(0, verts_count);
+    position.clearUpdateRanges();
+    position.addUpdateRange(update_start, update_count);
+    position.needsUpdate = true;
 
 }
 
@@ -186,7 +192,7 @@ function Cuts() {
 }
 
 createRoot(document.getElementById("main")).render(
-    <Canvas camera={{ position: [0, 5, 5] }}>
+    <Canvas camera={{ position: [0, 0, -100] }}>
         <Cuts />
         <gridHelper />
         <OrbitControls  enableDamping={false} />
