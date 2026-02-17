@@ -1,3 +1,4 @@
 .zig-cache
 zig-out
 core_sample_hybrid_CFD.msh
+*.wasm

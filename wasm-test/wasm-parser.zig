@@ -12,17 +12,17 @@ const Meta = extern struct {
 extern fn log_node_start() void;
 extern fn log_elem_start() void;
 
-export fn initMemory(file_size: u32) u32 {
-    const slice = std.heap.page_allocator.alloc(u8, file_size) catch return 0;
-    return @intFromPtr(slice.ptr);
+export fn initMemory(file_size: usize) ?[*]u8 {
+    const slice = std.heap.page_allocator.alloc(u8, file_size) catch return null;
+    return slice.ptr;
 }
 
-export fn parseModel(file_ptr: [*]const u8, file_len: u32) u32 {
-    return parse_main(file_ptr[0..file_len]) catch 0;
+export fn parseModel(file_ptr: [*]const u8, file_len: u32) ?*const Meta {
+    return parse_main(file_ptr[0..file_len]) catch null;
 }
 
 
-fn parse_main(file_content: []const u8) !u32 {
+fn parse_main(file_content: []const u8) !*const Meta {
     var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
     const alloc = arena.allocator();
 
@@ -253,7 +253,7 @@ fn parse_main(file_content: []const u8) !u32 {
     meta_mem[0].nodes_z = nodes.z.ptr;
     meta_mem[0].nodes_len = nodes.len;
 
-    return @intFromPtr(meta_mem.ptr);
+    return &meta_mem[0];
 }
 
 fn findSection(comptime kw: []const u8, str: []const u8) ![]const u8 {
