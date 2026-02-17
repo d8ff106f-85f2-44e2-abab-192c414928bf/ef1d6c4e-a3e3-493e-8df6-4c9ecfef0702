@@ -7,6 +7,7 @@ const Meta = extern struct {
     nodes_y: [*]const f32,
     nodes_z: [*]const f32,
     elems_v: [*]const [4]u32,
+    nodes_n: [*]const u32,
 };
 
 extern fn log_node_start() void;
@@ -240,7 +241,7 @@ fn parse_main(file_content: []const u8) !*const Meta {
     //     std.debug.print("index: {any}, verts: {any}\n", .{elems.id[i], elems.v[i]});
     // }
 
-    for (node_id_buf[0..nodes.len], 0..) |*n, i| {
+    for (nodes.id[0..nodes.len], 0..) |*n, i| {
         n.* = @truncate(i);
     }
 
@@ -251,6 +252,7 @@ fn parse_main(file_content: []const u8) !*const Meta {
     meta_mem[0].nodes_x = nodes.x.ptr;    
     meta_mem[0].nodes_y = nodes.y.ptr;
     meta_mem[0].nodes_z = nodes.z.ptr;
+    meta_mem[0].nodes_n = nodes.id.ptr;
     meta_mem[0].nodes_len = nodes.len;
 
     return &meta_mem[0];

@@ -47,13 +47,14 @@ async function onUpload() {
     }
 
     
-    const meta = new Uint32Array(parser_memory.buffer, meta_ptr, 6);
+    const meta = new Uint32Array(parser_memory.buffer, meta_ptr, 7);
     output.textContent += ("nodes_count: " + meta[0] + "\n");
     output.textContent += ("elems_count: " + meta[1] + "\n");
     output.textContent += ("nodes_x_ptr: " + meta[2] + "\n");
     output.textContent += ("nodes_y_ptr: " + meta[3] + "\n");
     output.textContent += ("nodes_z_ptr: " + meta[4] + "\n");
     output.textContent += ("elems_v_ptr: " + meta[5] + "\n");
+    output.textContent += ("nodes_n_ptr: " + meta[6] + "\n");
     output.textContent += ("file_size: " + file_size + "\n");
 
 
@@ -65,6 +66,7 @@ async function onUpload() {
     const nodes_y_ptr = meta[3];
     const nodes_z_ptr = meta[4];
     const elems_v_ptr = meta[5];
+    const nodes_n_ptr = meta[6];
 
     
 
@@ -72,6 +74,7 @@ async function onUpload() {
     const ys_src = new Float32Array(parser_memory.buffer, nodes_y_ptr, nodes_count);
     const zs_src = new Float32Array(parser_memory.buffer, nodes_z_ptr, nodes_count);
     const tets_src = new Uint32Array(parser_memory.buffer, elems_v_ptr, elems_count * 4);
+    const ns_src = new Uint32Array(parser_memory.buffer, nodes_n_ptr, nodes_count);
 
 
     const slicer_memory = new WebAssembly.Memory({
@@ -97,11 +100,13 @@ async function onUpload() {
 
     const data = new Uint32Array(slicer_memory.buffer, data_ptr, 26);
 
-    const xs_dst = new Float32Array(slicer_memory.buffer, data[5], nodes_count);
-    const ys_dst = new Float32Array(slicer_memory.buffer, data[6], nodes_count);
-    const zs_dst = new Float32Array(slicer_memory.buffer, data[7], nodes_count);
-    const tets_dst = new Uint32Array(slicer_memory.buffer, data[16], elems_count * 4);
+    const ns_dst = new Uint32Array(slicer_memory.buffer, data[1], nodes_count);
+    const xs_dst = new Float32Array(slicer_memory.buffer, data[2], nodes_count);
+    const ys_dst = new Float32Array(slicer_memory.buffer, data[3], nodes_count);
+    const zs_dst = new Float32Array(slicer_memory.buffer, data[4], nodes_count);
+    const tets_dst = new Uint32Array(slicer_memory.buffer, data[13], elems_count * 4);
 
+    ns_dst.set(ns_src);
     xs_dst.set(xs_src);
     ys_dst.set(ys_src);
     zs_dst.set(zs_src);
