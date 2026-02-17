@@ -2,3 +2,7 @@
 zig-out
 core_sample_hybrid_CFD.msh
 *.wasm
+
+dist
+node_modules
+*.lock
