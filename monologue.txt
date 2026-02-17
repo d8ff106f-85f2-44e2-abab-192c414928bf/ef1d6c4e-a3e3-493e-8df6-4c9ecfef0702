@@ -348,3 +348,31 @@ sleeping, fix it tmr, should take about an hour or two to reorganize code.
 remaining time is react renderer. Validate render perf with webgpu renderer first
 
 -- signed 2026-02-16T09:13:29Z
+
+
+
+can't hand off array directly to wasm, instead export an output buffer and user BufferAttribute.copyArray(wasm_out)
+
+-- signed 2026-02-16T21:39:17Z
+
+
+
+
+r3f test shows that you can have a persistent buffer handed to threejs and just update it and mark .needsUpdate = true
+
+
+
+if wasm module requests its own address space
+
+zig build-exe wasm.zig -target wasm32-freestanding -fno-entry -rdynamic
+
+
+
+if wasm module gets an address space handed to it:
+
+zig build-exe wasm.zig -target wasm32-freestanding -fno-entry -rdynamic --import-memory
+
+
+in either case, you need to kindly ask the wasm module which address ranges are safe to access from javascript.
+
+-- signed 2026-02-17T04:52:43Z
