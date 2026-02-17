@@ -20,7 +20,7 @@ let last_slider_value = 0;
 
 async function init() {
     
-    const file = await (await fetch("core_sample_hybrid_CFD.msh")).blob();
+    const file = await (await fetch("https://github.com/d8ff106f-85f2-44e2-abab-192c414928bf/ef1d6c4e-a3e3-493e-8df6-4c9ecfef0702/releases/download/r3f-asset/core_sample_hybrid_CFD.msh")).blob();
     const file_size = file.size;
     const file_stream = file.stream();
 
