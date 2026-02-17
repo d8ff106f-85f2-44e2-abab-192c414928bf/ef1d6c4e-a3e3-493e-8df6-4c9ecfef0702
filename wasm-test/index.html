@@ -120,6 +120,10 @@ async function onUpload() {
     console.log(ys_dst[nodes_count-1]);
     console.log(zs_dst[nodes_count-1]);
 
+    slicer.instance.exports.reorient(data_ptr, 0.5, 0.5, 0.5, 0.5 );
+    const cuts = slicer.instance.exports.reslice(data_ptr, 0.5);
+
+
     button.disabled = false;
 }
 </script>
