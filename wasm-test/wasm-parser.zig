@@ -17,7 +17,7 @@ export fn initMemory(file_size: usize) ?[*]u8 {
     return slice.ptr;
 }
 
-export fn parseModel(file_ptr: [*]const u8, file_len: u32) ?*const Meta {
+export fn parseModel(file_ptr: [*]const u8, file_len: usize) ?*const Meta {
     return parse_main(file_ptr[0..file_len]) catch null;
 }
 
