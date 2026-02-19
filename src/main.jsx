@@ -24,7 +24,7 @@ let last_slider_value = 0;
 async function init() {
     const button = document.getElementById('button');
     button.disabled = true;
-    button.textContent = 'Reading model...';
+    button.value = 'Reading model...';
     
     const upload = document.getElementById('upload');
     const file_size = upload.files[0].size;
@@ -73,7 +73,7 @@ async function init() {
     }
 
     console.log("parsing model...");
-    button.textContent = 'Processing model...';
+    button.value = 'Processing model...';
     const meta_ptr = parser.instance.exports.parseModel(file_ptr, file_size);
     if (meta_ptr == 0) {
         console.log("failed to parse model");
@@ -147,11 +147,11 @@ async function init() {
     console.log(zs_dst[nodes_count-1]);
 
     console.log("reoreinting...");
-    button.textContent = 'Reorienting...';
+    button.value = 'Reorienting...';
     slicer.instance.exports.reorient(data_ptr, 0,0,0,1 );
 
     console.log("reslicing...");
-    button.textContent = 'Reslicing...';
+    button.value = 'Reslicing...';
     const cuts = slicer.instance.exports.reslice(data_ptr, slider_value);
     console.log(cuts);
 
@@ -174,7 +174,7 @@ async function init() {
 
 
     
-    button.textContent = 'Done.';
+    button.value = 'Done.';
 
 }
 
