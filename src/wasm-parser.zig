@@ -8,6 +8,7 @@ const Meta = extern struct {
     nodes_z: [*]const f32,
     elems_v: [*]const [4]u32,
     nodes_n: [*]const u32,
+    aabb: [6]f32,
 };
 
 extern fn log_node_start() void;
@@ -29,6 +30,37 @@ fn parse_main(file_content: []const u8) !*const Meta {
 
     const node_section = try findSection("Nodes", file_content);
     const elem_section = try findSection("Elements", file_content);
+    const entt_section = try findSection("Entities", file_content);
+
+    var entt_line_iterator = std.mem.tokenizeAny(u8, entt_section, "\r\n");
+    const entt_meta = entt_line_iterator.next() orelse return error.Unexpected;
+
+    var entt_meta_iterator = std.mem.tokenizeScalar(u8, entt_meta, ' ');
+    const entt_0 = try std.fmt.parseUnsigned(u32, entt_meta_iterator.next() orelse return error.Unexpected, 10);
+    const entt_1 = try std.fmt.parseUnsigned(u32, entt_meta_iterator.next() orelse return error.Unexpected, 10);
+    const entt_2 = try std.fmt.parseUnsigned(u32, entt_meta_iterator.next() orelse return error.Unexpected, 10);
+    const entt_3 = try std.fmt.parseUnsigned(u32, entt_meta_iterator.next() orelse return error.Unexpected, 10);
+    for (0 .. entt_0 + entt_1 + entt_2) |_| {
+        _ = entt_line_iterator.next() orelse return error.Unexpected;
+    }
+    var aabb: [6]f32 = @splat(@as(f32, 0.0) / 0.0);
+    for (0..entt_3) |_| {
+        const line = entt_line_iterator.next() orelse return error.Unexpected;
+        var it = std.mem.tokenizeScalar(u8, line, ' ');
+        _ = it.next() orelse return error.Unexpected;
+        const min_x = try std.fmt.parseFloat(f32, it.next() orelse return error.Unexpected);
+        const min_y = try std.fmt.parseFloat(f32, it.next() orelse return error.Unexpected);
+        const min_z = try std.fmt.parseFloat(f32, it.next() orelse return error.Unexpected);
+        const max_x = try std.fmt.parseFloat(f32, it.next() orelse return error.Unexpected);
+        const max_y = try std.fmt.parseFloat(f32, it.next() orelse return error.Unexpected);
+        const max_z = try std.fmt.parseFloat(f32, it.next() orelse return error.Unexpected);
+        aabb[0] = @min(aabb[0], min_x);
+        aabb[1] = @min(aabb[1], min_y);
+        aabb[2] = @min(aabb[2], min_z);
+        aabb[3] = @max(aabb[3], max_x);
+        aabb[4] = @max(aabb[4], max_y);
+        aabb[5] = @max(aabb[5], max_z);
+    }
 
 
 
@@ -254,6 +286,7 @@ fn parse_main(file_content: []const u8) !*const Meta {
     meta_mem[0].nodes_z = nodes.z.ptr;
     meta_mem[0].nodes_n = nodes.id.ptr;
     meta_mem[0].nodes_len = nodes.len;
+    meta_mem[0].aabb = aabb;
 
     return &meta_mem[0];
 }
